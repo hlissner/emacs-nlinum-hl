@@ -1,3 +1,6 @@
+[![MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
+[![MELPA](http://melpa.org/packages/solaire-mode-badge.svg)](http://melpa.org/#/solaire-mode)
+
 # nlinum-hl
 
 Extends nlinum to provide current-line-number highlighting, as well as various
