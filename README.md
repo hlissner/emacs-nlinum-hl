@@ -3,8 +3,10 @@
 
 # nlinum-hl
 
-Extends nlinum to provide current-line-number highlighting, as well as various
-other fixes.
+Extends nlinum to provide current-line-number highlighting, plus other fixes.
+
+It also tries to stave off a nlinum glitch where line numbers disappear (usually
+in buffers that have been open a while).
 
 > This was once a part of [doom-themes]
 
@@ -14,12 +16,21 @@ other fixes.
 
 ```emacs-lisp
 (require 'nlinum-hl)
-(add-hook 'nlinum-mode #'nlinum-hl-mode)
+(add-hook 'nlinum-hook #'nlinum-hl-mode))
+```
+
+Alternatively, use `use-package`:
+
+```emacs-lisp
+(use-package nlinum-hl
+  :after nlinum
+  :config
+  (add-hook 'nlinum-hook #'nlinum-hl-mode))
 ```
 
 ## Configuration
 
-The line number is highlighted with `nlinum-hl-face`, which can be customized.
++ Customize `nlinum-hl-face` to change how it looks.
 
 
-[doom-themes]: https://github.com/hlissner/emacs-doom-theme
+[doom-themes]: https://github.com/hlissner/emacs-doom-themes
