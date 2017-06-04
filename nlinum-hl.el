@@ -44,7 +44,7 @@
   :group 'faces) ; FIXME :group
 
 (defvar nlinum-hl--overlay nil)
-(defvar nlinum-hl--line 0)
+(defvar nlinum-hl--line "0")
 
 (defcustom nlinum-hl-redraw 'window
   "Determines what nlinum-hl should do when it encounters a missing line number.
@@ -69,43 +69,48 @@ If t, redraw nlinum across all buffers (slowest)."
   "Return t if OV (an overlay) is an nlinum overlay."
   (overlay-get ov 'nlinum))
 
+(defun nlinum-hl--this-overlay (beg end)
+  "Get the nlinum overlay for the current line."
+  (cl-find-if #'nlinum-hl-overlay-p (overlays-in beg end)))
+
 (defun nlinum-hl-line (&rest _)
   "Highlight the current nlinum line number."
   (while-no-input
-    (let* ((pbol (line-beginning-position))
-           (peol (1+ pbol))
-           (max (point-max))
-           (lineno (string-to-number (format-mode-line "%l"))))
-      (unless (= nlinum-hl--line lineno)
-        (setq nlinum-hl--line lineno)
-        ;; Handle EOF case
-        (when (>= peol max)
-          (setq peol max))
-        (jit-lock-fontify-now pbol peol)
-        ;; Unhighlight previous highlight
-        (when nlinum-hl--overlay
-          (let* ((disp (get-text-property 0 'display (overlay-get nlinum-hl--overlay 'before-string)))
-                 (str (nth 1 disp)))
-            (put-text-property 0 (length str) 'face 'linum str)
-            (setq nlinum-hl--overlay nil)
-            disp))
-        (let ((ov (cl-find-if #'nlinum-hl-overlay-p (overlays-in pbol peol))))
-          ;; Try to deal with evaporating line numbers
-          (unless (or ov (eobp))
-            (cond ((eq nlinum-hl-redraw 'line)
-                   (nlinum--region pbol peol))
-                  ((eq nlinum-hl-redraw 'window)
-                   (nlinum-hl-flush-region (window-start) (window-end)))
-                  ((eq nlinum-hl-redraw 'buffer)
-                   (nlinum-hl-flush-window nil t))
-                  ((eq nlinum-hl-redraw t)
-                   (nlinum-hl-flush-all-windows)))
-            (setq ov (cl-find-if #'nlinum-hl-overlay-p (overlays-in pbol peol))))
-          ;; highlight current line
-          (when ov
-            (let ((str (nth 1 (get-text-property 0 'display (overlay-get ov 'before-string)))))
-              (put-text-property 0 (length str) 'face 'nlinum-hl-face str)
-              (setq nlinum-hl--overlay ov))))))))
+    (let ((lineno (format-mode-line "%l")))
+      (unless (equal nlinum-hl--line lineno)
+        (let* ((pbol (line-beginning-position))
+               (peol (min (1+ pbol) (point-max))))
+          (setq nlinum-hl--line lineno)
+          (jit-lock-fontify-now pbol peol)
+          ;; Unhighlight previous highlight
+          (when nlinum-hl--overlay
+            (let* ((disp (get-text-property 0 'display (overlay-get nlinum-hl--overlay 'before-string)))
+                   (str (nth 1 disp)))
+              (put-text-property 0 (length str) 'face 'linum str)
+              (setq nlinum-hl--overlay nil)
+              disp))
+          (let ((ov (nlinum-hl--this-overlay pbol peol)))
+            ;; Try to deal with evaporated line numbers
+            (unless (or (eobp))
+              (cond ((eq nlinum-hl-redraw 'line)
+                     (when (bound-and-true-p hl-line-mode)
+                       (nlinum--region pbol peol)))
+                    ((eq nlinum-hl-redraw 'window)
+                     (nlinum-hl-flush-region (window-start) (window-end)))
+                    ((eq nlinum-hl-redraw 'buffer)
+                     (nlinum-hl-flush-window nil t))
+                    ((eq nlinum-hl-redraw t)
+                     (nlinum-hl-flush-all-windows)))
+              (when nlinum-hl-redraw
+                (setq ov (nlinum-hl--this-overlay pbol peol))))
+            ;; highlight current line number
+            (when ov
+              (unless (bound-and-true-p hl-line-mode)
+                (nlinum--region pbol peol)
+                (setq ov (nlinum-hl--this-overlay pbol peol)))
+              (let ((str (nth 1 (get-text-property 0 'display (overlay-get ov 'before-string)))))
+                (put-text-property 0 (length str) 'face 'nlinum-hl-face str)
+                (setq nlinum-hl--overlay ov)))))))))
 
 (defun nlinum-hl-flush-region (&optional beg end preserve-hl-p)
   "Redraw nlinum within the region BEG and END (points).
@@ -166,11 +171,6 @@ are missing or not."
   "Highlight current line in current buffer, using nlinum-mode."
   :lighter "" ; should be obvious it's on
   :init-value nil
-  ;; hl-line-mode forces the current line number to redraw.
-  ;; TODO manual redraw without hl-line
-  (when (featurep 'hl-line)
-    (remove-overlays (point-min) (point-max) 'hl-line t)
-    (hl-line-mode (if nlinum-hl-mode +1 -1)))
   (cond (nlinum-hl-mode
          (add-hook 'post-command-hook #'nlinum-hl-line nil t))
         (t
