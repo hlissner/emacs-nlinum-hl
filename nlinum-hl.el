@@ -46,6 +46,19 @@
 (defvar nlinum-hl--overlay nil)
 (defvar nlinum-hl--line 0)
 
+(defcustom nlinum-hl-redraw 'window
+  "Determines what nlinum-hl should do when it encounters a missing line number.
+
+If 'line', fix only that line number (fastest).
+If 'window', redraw only the visible line numbers in the current window.
+If 'buffer', redraw all line numbers in that buffer.
+If t, redraw nlinum across all buffers (slowest)."
+  :group 'nlinum-hl
+  :type '(choice (const :tag "Current line" 'line)
+                 (const :tag "Visible window" 'window)
+                 (const :tag "Whole buffer" 'buffer)
+                 (const :tag "All windows" t)))
+
 (defface nlinum-hl-face
   '((((background dark))  (:inherit linum :weight bold :foreground "white"))
     (((background white)) (:inherit linum :weight bold :foreground "black")))
@@ -77,39 +90,77 @@
             (setq nlinum-hl--overlay nil)
             disp))
         (let ((ov (cl-find-if #'nlinum-hl-overlay-p (overlays-in pbol peol))))
-          ;; Try to deal with evaporating line numbers (a known nlinum bug)
+          ;; Try to deal with evaporating line numbers
           (unless (or ov (eobp))
-            (nlinum--region pbol peol)
+            (cond ((eq nlinum-hl-redraw 'line)
+                   (nlinum--region pbol peol))
+                  ((eq nlinum-hl-redraw 'window)
+                   (nlinum-hl-flush-region (window-start) (window-end)))
+                  ((eq nlinum-hl-redraw 'buffer)
+                   (nlinum-hl-flush-window nil t))
+                  ((eq nlinum-hl-redraw t)
+                   (nlinum-hl-flush-all-windows)))
             (setq ov (cl-find-if #'nlinum-hl-overlay-p (overlays-in pbol peol))))
+          ;; highlight current line
           (when ov
             (overlay-put ov 'nlinum-hl t)
             (let ((str (nth 1 (get-text-property 0 'display (overlay-get ov 'before-string)))))
               (put-text-property 0 (length str) 'face 'nlinum-hl-face str)
               (setq nlinum-hl--overlay ov))))))))
 
-(defun nlinum-hl-flush-window (&optional window)
-  "Redraw nlinum in the current WINDOW, repairing any glitches."
+(defun nlinum-hl-flush-region (&optional beg end preserve-hl-p)
+  "Redraw nlinum within the region BEG and END (points).
+
+If PRESERVE-HL-P, then don't affect the current line highlight."
+  (when nlinum-mode
+    (let ((beg (or beg (point-min)))
+          (end (or end (point-max))))
+      (if (not preserve-hl-p)
+          (nlinum--region beg end)
+        ;; done in two steps to leave current line number highlighting alone
+        (nlinum--region beg (max 1 (1- (line-beginning-position))))
+        (nlinum--region (min wend (1+ (line-end-position))) end)))))
+
+(defun nlinum-hl-flush-window (&optional window force-p)
+  "If line numbers are missing in the current WINDOW, force nlinum to redraw.
+
+If FORCE-P (universal argument), then do it regardless of whether line numbers
+are missing or not."
+  (interactive "iP")
   (let ((window (or window (selected-window)))
         (orig-win (selected-window)))
     (with-selected-window window
       (when nlinum-mode
-        (if (not (eq window orig-win))
-            (nlinum--flush)
-          ;; done in two steps to leave current line number highlighting alone
-          (nlinum--region (point-min) (max 1 (1- (line-beginning-position))))
-          (nlinum--region (min (point-max) (1+ (line-end-position))) (point-max)))))))
+        (let ((wbeg (window-start))
+              (wend (window-end))
+              (lines 0)
+              (ovs 0))
+          (unless force-p
+            (save-excursion
+              (goto-char wbeg)
+              (while (and (<= (point) wend)
+                          (not (eobp)))
+                (let ((lbeg (line-beginning-position)))
+                  (when (cl-some (lambda (ov) (overlay-get ov 'nlinum)) (overlays-in lbeg (1+ lbeg)))
+                    (cl-incf ovs)))
+                (forward-line 1)
+                (cl-incf lines))))
+          (when (or force-p (not (= ovs lines)))
+            (nlinum-hl-flush-region
+             (point-min) (point-max)
+             (or force-p (not (= ovs lines))))))))))
 
 (defun nlinum-hl-flush-all-windows (&rest _)
   "Flush nlinum in all windows."
   (mapc #'nlinum-hl-flush-window (window-list))
   nil)
-(advice-add #'set-frame-font :after #'nlinum-hl-flush-all-windows)
 
-(defun nlinum-hl-flush (&optional _ norecord)
+(defun nlinum-hl-do-flush (&optional _ norecord)
   "Advice for `select-window' to flush nlinum before/after switching."
   ;; norecord check is necessary to prevent infinite recursion in
   ;; `select-window'
-  (when (not norecord) (nlinum-hl-flush-window)))
+  (when (not norecord)
+    (nlinum-hl-flush-window)))
 
 ;;;###autoload
 (define-minor-mode nlinum-hl-mode
@@ -121,21 +172,16 @@
   (when (featurep 'hl-line)
     (remove-overlays (point-min) (point-max) 'hl-line t)
     (hl-line-mode (if nlinum-hl-mode +1 -1)))
-  (if nlinum-hl-mode
-      (add-hook 'post-command-hook #'nlinum-hl-line nil t)
-    (remove-hook 'post-command-hook #'nlinum-hl-line t)))
+  (cond (nlinum-hl-mode
+         (add-hook 'post-command-hook #'nlinum-hl-line nil t))
+        (t
+         (remove-hook 'post-command-hook #'nlinum-hl-line t))))
 
-;; Folding in web-mode can cause nlinum glitching. This attempts to resolve it.
-(eval-after-load "web-mode"
-  (lambda ()
-    (advice-add #'web-mode-fold-or-unfold :after #'nlinum-hl-flush)))
+;; Changing fonts can upset nlinum overlays; this forces them to resize.
+(advice-add #'set-frame-font :after #'nlinum-hl-flush-all-windows)
 
-;; nlinum has a tendency to lose line numbers over time; a known issue. These
-;; hooks/advisors attempt to stave off these glitches.
-(advice-add #'select-window :before #'nlinum-hl-flush)
-(advice-add #'select-window :after  #'nlinum-hl-flush)
-(add-hook 'focus-in-hook  #'nlinum-hl-flush-all-windows)
-(add-hook 'focus-out-hook #'nlinum-hl-flush-all-windows)
+;; Folding in `web-mode' can cause nlinum glitching. This attempts to fix it.
+(advice-add #'web-mode-fold-or-unfold :after #'nlinum-hl-do-flush)
 
 (provide 'nlinum-hl)
 ;;; nlinum-hl.el ends here
