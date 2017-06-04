@@ -19,7 +19,7 @@ faster.
 
 ```emacs-lisp
 (require 'nlinum-hl)
-(add-hook 'nlinum-hook #'nlinum-hl-mode))
+(add-hook 'nlinum-mode-hook #'nlinum-hl-mode)
 ```
 
 Alternatively, use `use-package`:
