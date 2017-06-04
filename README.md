@@ -3,6 +3,8 @@
 
 # nlinum-hl
 
+![nlinum-hl screenshot](/../screenshots/nlinum-hl.png)
+
 Extends nlinum to provide current-line-number highlighting, and tries to
 mitigate disappearing line numbers (a known issue with nlinum). Read more on
 this below.
