@@ -66,8 +66,8 @@ If t, redraw nlinum across all buffers (slowest)."
   :group 'nlinum-hl)
 
 (defun nlinum-hl-overlay-p (ov)
-  "Return t if OV (an overlay) is an nlinum-hl overlay."
-  (overlay-get ov 'nlinum-hl))
+  "Return t if OV (an overlay) is an nlinum overlay."
+  (overlay-get ov 'nlinum))
 
 (defun nlinum-hl-line (&rest _)
   "Highlight the current nlinum line number."
@@ -103,7 +103,6 @@ If t, redraw nlinum across all buffers (slowest)."
             (setq ov (cl-find-if #'nlinum-hl-overlay-p (overlays-in pbol peol))))
           ;; highlight current line
           (when ov
-            (overlay-put ov 'nlinum-hl t)
             (let ((str (nth 1 (get-text-property 0 'display (overlay-get ov 'before-string)))))
               (put-text-property 0 (length str) 'face 'nlinum-hl-face str)
               (setq nlinum-hl--overlay ov))))))))
