@@ -168,7 +168,6 @@ are missing or not."
   :lighter "" ; should be obvious it's on
   :init-value nil
   (cond (nlinum-hl-mode
-         (nlinum-mode +1)
          (add-hook 'post-command-hook #'nlinum-hl-line nil t))
 
         (t
