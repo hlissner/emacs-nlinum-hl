@@ -156,7 +156,7 @@ are missing or not."
   nil)
 
 (defun nlinum-hl-do-flush (&optional _ norecord)
-  "Advice for `select-window' to flush nlinum before/after switching."
+  "Advice function for flushing the current window."
   ;; norecord check is necessary to prevent infinite recursion in
   ;; `select-window'
   (when (not norecord)

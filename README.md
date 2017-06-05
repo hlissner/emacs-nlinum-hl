@@ -63,8 +63,8 @@ not be enough for some, so here are more things you can try:
 (run-with-idle-timer 30 t #'nlinum-hl-flush-all-windows)
 
 ;; when switching windows
-(advice-add #'select-window :before #'nlinum-hl-flush)
-(advice-add #'select-window :after  #'nlinum-hl-flush)
+(advice-add #'select-window :before #'nlinum-hl-do-flush)
+(advice-add #'select-window :after  #'nlinum-hl-do-flush)
 
 ;; this seems to fix the problem completely, but I'm uncertain of the
 ;; performance ramifications. It might cause stuttering!
