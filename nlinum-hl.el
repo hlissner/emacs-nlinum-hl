@@ -41,12 +41,10 @@
   "Options for nlinum-hl."
   :group 'faces) ; FIXME :group
 
-(defvar nlinum-hl--overlay nil)
-(defvar nlinum-hl--line "0")
-
 (defcustom nlinum-hl-redraw 'window
   "Determines what nlinum-hl should do when it encounters a missing line number.
 
+If nil, do nothing about it.
 If 'line', fix only that line number (fastest).
 If 'window', redraw only the visible line numbers in the current window.
 If 'buffer', redraw all line numbers in that buffer.
@@ -55,7 +53,8 @@ If t, redraw nlinum across all buffers (slowest)."
   :type '(choice (const :tag "Current line" 'line)
                  (const :tag "Visible window" 'window)
                  (const :tag "Whole buffer" 'buffer)
-                 (const :tag "All windows" t)))
+                 (const :tag "All windows" t)
+                 (const :tag "Do nothing" nil)))
 
 (defface nlinum-hl-face
   '((((background dark))  (:inherit linum :weight bold :foreground "white"))
@@ -63,6 +62,10 @@ If t, redraw nlinum across all buffers (slowest)."
   "Face for the highlighted line number."
   :group 'nlinum-hl)
 
+(defvar nlinum-hl--overlay nil)
+(defvar nlinum-hl--line "0")
+
+;;
 (defun nlinum-hl-overlay-p (ov)
   "Return t if OV (an overlay) is an nlinum overlay."
   (overlay-get ov 'nlinum))
@@ -170,7 +173,9 @@ are missing or not."
   :lighter "" ; should be obvious it's on
   :init-value nil
   (cond (nlinum-hl-mode
+         (nlinum-mode +1)
          (add-hook 'post-command-hook #'nlinum-hl-line nil t))
+
         (t
          (remove-hook 'post-command-hook #'nlinum-hl-line t))))
 
