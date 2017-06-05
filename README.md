@@ -30,7 +30,7 @@ Alternatively, use `use-package`:
 (use-package nlinum-hl
   :after nlinum
   :config
-  (add-hook 'nlinum-hook #'nlinum-hl-mode))
+  (add-hook 'nlinum-mode-hook #'nlinum-hl-mode))
 ```
 
 ## Configuration
