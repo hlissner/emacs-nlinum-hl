@@ -74,41 +74,36 @@ If t, redraw nlinum across all buffers (slowest)."
   "Get the nlinum overlay for the current line."
   (cl-find-if #'nlinum-hl-overlay-p (overlays-in beg end)))
 
-(defun nlinum-hl-line (&rest _)
+(defun nlinum-hl-line (&optional force-p)
   "Highlight the current nlinum line number."
   (while-no-input
     (let ((lineno (format-mode-line "%l")))
-      (unless (equal nlinum-hl--line lineno)
+      (when (or force-p (not (equal nlinum-hl--line lineno)))
         (let* ((pbol (line-beginning-position))
                (peol (min (1+ pbol) (point-max))))
           (setq nlinum-hl--line lineno)
-          (jit-lock-fontify-now pbol peol)
+          ;; (jit-lock-fontify-now pbol peol)
           ;; Unhighlight previous highlight
           (when nlinum-hl--overlay
-            (let* ((disp (get-text-property 0 'display (overlay-get nlinum-hl--overlay 'before-string)))
-                   (str (nth 1 disp)))
+            (let ((str (nth 1 (get-text-property 0 'display (overlay-get nlinum-hl--overlay 'before-string)))))
               (put-text-property 0 (length str) 'face 'linum str)
-              (setq nlinum-hl--overlay nil)
-              disp))
+              (setq nlinum-hl--overlay nil)))
           (let ((ov (nlinum-hl--this-overlay pbol peol)))
-            ;; Try to deal with evaporated line numbers
-            (unless (or (eobp))
-              (cond ((eq nlinum-hl-redraw 'line)
-                     (when (bound-and-true-p hl-line-mode)
-                       (nlinum--region pbol peol)))
-                    ((eq nlinum-hl-redraw 'window)
-                     (nlinum-hl-flush-region (window-start) (window-end)))
-                    ((eq nlinum-hl-redraw 'buffer)
-                     (nlinum-hl-flush-window nil t))
-                    ((eq nlinum-hl-redraw t)
-                     (nlinum-hl-flush-all-windows)))
-              (when nlinum-hl-redraw
-                (setq ov (nlinum-hl--this-overlay pbol peol))))
             ;; highlight current line number
-            (when ov
-              (unless (bound-and-true-p hl-line-mode)
+            (if ov
                 (nlinum--region pbol peol)
-                (setq ov (nlinum-hl--this-overlay pbol peol)))
+              ;; Try to deal with evaporated line numbers
+              (unless (eobp)
+                (cond ((eq nlinum-hl-redraw 'line)
+                       (nlinum--region pbol peol))
+                      ((eq nlinum-hl-redraw 'window)
+                       (nlinum-hl-flush-region (window-start) (window-end)))
+                      ((eq nlinum-hl-redraw 'buffer)
+                       (nlinum-hl-flush-window nil t))
+                      ((eq nlinum-hl-redraw t)
+                       (nlinum-hl-flush-all-windows)))))
+            (when (setq ov (nlinum-hl--this-overlay pbol peol))
+              (overlay-put ov 'nlinum-hl t)
               (let ((str (nth 1 (get-text-property 0 'display (overlay-get ov 'before-string)))))
                 (put-text-property 0 (length str) 'face 'nlinum-hl-face str)
                 (setq nlinum-hl--overlay ov)))))))))
