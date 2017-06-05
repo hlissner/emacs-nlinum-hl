@@ -65,6 +65,10 @@ not be enough for some, so here are more things you can try:
 ;; when switching windows
 (advice-add #'select-window :before #'nlinum-hl-flush)
 (advice-add #'select-window :after  #'nlinum-hl-flush)
+
+;; this seems to fix the problem completely, but I'm uncertain of the
+;; performance ramifications. It might cause stuttering!
+(add-hook 'post-gc-hook #'nlinum-hl-flush-all-windows)
 ```
 
 
