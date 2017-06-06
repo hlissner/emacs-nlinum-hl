@@ -167,7 +167,7 @@ are missing or not."
   "Highlight current line in current buffer, using nlinum-mode."
   :lighter "" ; should be obvious it's on
   :init-value nil
-  (cond (nlinum-hl-mode
+  (cond ((and nlinum-hl-mode nlinum-mode)
          (add-hook 'post-command-hook #'nlinum-hl-line nil t))
 
         (t
