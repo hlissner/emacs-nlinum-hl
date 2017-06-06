@@ -5,8 +5,8 @@
 ;; Author: Henrik Lissner <http://github/hlissner>
 ;; Maintainer: Henrik Lissner <henrik@lissner.net>
 ;; Created: Jun 03, 2017
-;; Modified: Jun 05, 2017
-;; Version: 1.0.2
+;; Modified: Jun 06, 2017
+;; Version: 1.0.3
 ;; Keywords: nlinum highlight current line faces
 ;; Homepage: https://github.com/hlissner/emacs-nlinum-hl
 ;; Package-Requires: ((emacs "24.4") (nlinum "1.6") (cl-lib "0.5"))
