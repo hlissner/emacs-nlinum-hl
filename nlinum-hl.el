@@ -5,8 +5,8 @@
 ;; Author: Henrik Lissner <http://github/hlissner>
 ;; Maintainer: Henrik Lissner <henrik@lissner.net>
 ;; Created: Jun 03, 2017
-;; Modified: Jun 06, 2017
-;; Version: 1.0.3
+;; Modified: Jun 07, 2017
+;; Version: 1.0.4
 ;; Keywords: nlinum highlight current line faces
 ;; Homepage: https://github.com/hlissner/emacs-nlinum-hl
 ;; Package-Requires: ((emacs "24.4") (nlinum "1.7") (cl-lib "0.5"))
@@ -90,7 +90,6 @@ If t, redraw nlinum across all buffers (slowest)."
         (let* ((pbol (line-beginning-position))
                (peol (min (1+ pbol) (point-max))))
           (setq nlinum-hl--line lineno)
-          ;; (jit-lock-fontify-now pbol peol)
           ;; Unhighlight previous highlight
           (when nlinum-hl--overlay
             (let ((str (nth 1 (get-text-property 0 'display (overlay-get nlinum-hl--overlay 'before-string)))))
