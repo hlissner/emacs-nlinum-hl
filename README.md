@@ -1,5 +1,5 @@
 [![MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
-[![MELPA](http://melpa.org/packages/solaire-mode-badge.svg)](http://melpa.org/#/solaire-mode)
+[![MELPA](http://melpa.org/packages/nlinum-hl-badge.svg)](http://melpa.org/#/nlinum-hl)
 
 # nlinum-hl
 
