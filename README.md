@@ -21,21 +21,21 @@ numbers in buffers that have been open a while (a known issue with nlinum).
 
 ```emacs-lisp
 (require 'nlinum-hl)
-
-;; This seems to fix the problem completely, but I'm uncertain of the
-;; performance ramifications. It might cause stuttering!
-(add-hook 'post-gc-hook #'nlinum-hl-flush-all-windows)
 ```
 
-The `post-gc-hook` hook works flawlessly for me. In case this isn't true for
-everyone, here are some alternatives:
+By itself, `nlinum-hl` does nothing. You'll need to attach one of its functions
+or hooks somewhere. I leave it to you to decide where, as it depends on how bad
+the problem is for you. Here are some examples:
 
 ```emacs-lisp
+;; Runs occasionally, though unpredictably
+(add-hook 'post-gc-hook #'nlinum-hl-flush-all-windows)
+
 ;; whenever Emacs loses/gains focus
 (add-hook 'focus-in-hook  #'nlinum-hl-flush-all-windows)
 (add-hook 'focus-out-hook #'nlinum-hl-flush-all-windows)
 
-;; when idling
+;; after X amount of idle time
 (run-with-idle-timer 5 t #'nlinum-hl-flush-window)
 (run-with-idle-timer 30 t #'nlinum-hl-flush-all-windows)
 
