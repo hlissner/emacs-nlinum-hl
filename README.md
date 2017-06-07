@@ -3,55 +3,32 @@
 
 # nlinum-hl
 
-![nlinum-hl screenshot](/../screenshots/nlinum-hl.png)
+<img src="https://raw.githubusercontent.com/hlissner/emacs-nlinum-hl/screenshots/nlinum-hl.png" align="right" />
 
-Extends nlinum to provide current-line-number highlighting, and tries to
-mitigate disappearing line numbers (a known issue with nlinum). Read more on
-this below.
+> nlinum 1.7 is now available on ELPA and offers current-line highlighting, so
+> this plugin has changed its focus.
 
-nlinum 1.7 offers current-line highlighting, but as of this writing only 1.6 is
-available on ([M]ELPA|Marmalade). I also believe my implementation to be faster.
+`nlinum-hl` is an nlinum extension that tries to mitigate disappearing line
+numbers in buffers that have been open a while (a known issue with nlinum).
 
 > This was once a part of [doom-themes]
 
 ## Install
 
+`nlinum-hl` is available on MELPA.
+
 `M-x package-install RET nlinum-hl`
 
 ```emacs-lisp
 (require 'nlinum-hl)
-(add-hook 'nlinum-mode-hook #'nlinum-hl-mode)
+
+;; This seems to fix the problem completely, but I'm uncertain of the
+;; performance ramifications. It might cause stuttering!
+(add-hook 'post-gc-hook #'nlinum-hl-flush-all-windows)
 ```
 
-Alternatively, use `use-package`:
-
-```emacs-lisp
-(use-package nlinum-hl
-  :after nlinum
-  :config
-  (add-hook 'nlinum-mode-hook #'nlinum-hl-mode))
-```
-
-## Configuration
-
-+ Customize `nlinum-hl-face` to change how it looks.
-
-
-## Disappearing line numbers
-
-Occasionally, `nlinum`'s line numbers will disappear in buffers that have been
-open a while.
-
-When the current line is missing a line number, `nlinum-hl` can deal with it
-depending on the value of `nlinum-hl-redraw`. Its possible values are:
-
-+ `'line`: fix only that line's number (fastest)
-+ `'window` (the default): redraw the visible part of the current window
-+ `'buffer`: redraw all line numbers in that buffer
-+ `t`: redraw nlinum across all buffers with nlinum-mode active (slowest)
-
-In the interest of performance, this is all nlinum-hl will do for you. This may
-not be enough for some, so here are more things you can try:
+The `post-gc-hook` hook works flawlessly for me. In case this isn't true for
+everyone, here are some alternatives:
 
 ```emacs-lisp
 ;; whenever Emacs loses/gains focus
@@ -65,10 +42,6 @@ not be enough for some, so here are more things you can try:
 ;; when switching windows
 (advice-add #'select-window :before #'nlinum-hl-do-flush)
 (advice-add #'select-window :after  #'nlinum-hl-do-flush)
-
-;; this seems to fix the problem completely, but I'm uncertain of the
-;; performance ramifications. It might cause stuttering!
-(add-hook 'post-gc-hook #'nlinum-hl-flush-all-windows)
 ```
 
 
