@@ -129,7 +129,7 @@ If PRESERVE-HL-P, then don't affect the current line highlight."
           (nlinum--region beg end)
         ;; done in two steps to leave current line number highlighting alone
         (nlinum--region beg (max 1 (1- (line-beginning-position))))
-        (nlinum--region (min wend (1+ (line-end-position))) end)))))
+        (nlinum--region (min end (1+ (line-end-position))) end)))))
 
 (defun nlinum-hl-flush-window (&optional window force-p)
   "If line numbers are missing in the current WINDOW, force nlinum to redraw.
