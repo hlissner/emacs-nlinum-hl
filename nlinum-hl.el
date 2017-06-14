@@ -55,6 +55,7 @@
 ;;
 (defun nlinum-hl-flush-region (&optional beg end)
   "Redraw nlinum within the region BEG and END (points)."
+  (interactive "r")
   (when nlinum-mode
     (nlinum--region (or beg (point-min))
                     (or end (point-max)))))
@@ -78,25 +79,68 @@ are missing or not."
               (goto-char wbeg)
               (while (and (<= (point) wend)
                           (not (eobp)))
-                (let ((lbeg (line-beginning-position)))
-                  (when (cl-some (lambda (ov) (overlay-get ov 'nlinum)) (overlays-in lbeg (1+ lbeg)))
-                    (cl-incf ovs)))
+                (cl-loop with lbeg = (line-beginning-position)
+                         for ov in (overlays-in lbeg (1+ lbeg))
+                         if (overlay-get ov 'nlinum)
+                         do (cl-incf ovs))
                 (forward-line 1)
                 (cl-incf lines))))
           (when (or force-p (not (= ovs lines)))
             (nlinum-hl-flush-region)))))))
 
 (defun nlinum-hl-flush-all-windows (&rest _)
-  "Flush nlinum in all windows."
+  "Flush nlinum in all visible windows."
+  (interactive)
   (mapc #'nlinum-hl-flush-window (window-list))
   nil)
 
-(defun nlinum-hl-do-flush (&optional _ norecord)
+(defun nlinum-hl-do-select-window-flush (&optional _ norecord &rest _)
   "Advice function for flushing the current window."
   ;; norecord check is necessary to prevent infinite recursion in
   ;; `select-window'
   (when (not norecord)
     (nlinum-hl-flush-window)))
+
+(defun nlinum-hl-do-generic-flush (&rest _)
+  "Advice function for flushing the current window."
+  (nlinum-hl-flush-window))
+
+(defun nlinum-hl-do-region (start limit)
+  "Advice for `nlinum--region' that fixes a off-by-one error, causing missing
+line numbers at certain intervals.
+
+Credit for this fix goes to: https://github.com/gilbertw1"
+  (save-excursion
+    (let ((inhibit-point-motion-hooks t))
+      (goto-char start)
+      (unless (bolp) (forward-line 1))
+      (remove-overlays (point) limit 'nlinum t)
+      (let ((line (nlinum--line-number-at-pos)))
+        (while
+            (and (not (eobp)) (<= (point) limit)
+                 (let* ((ol (make-overlay (point) (1+ (point))))
+                        (str (funcall nlinum-format-function
+                                      line nlinum--width))
+                        (width (string-width str)))
+                   (when (< nlinum--width width)
+                     (setq nlinum--width width)
+                     (nlinum--flush))
+                   (overlay-put ol 'nlinum t)
+                   (overlay-put ol 'evaporate t)
+                   (overlay-put ol 'before-string
+                                (propertize " " 'display
+                                            `((margin left-margin) ,str)))
+                   (setq line (1+ line))
+                   (zerop (forward-line 1))))))))
+  nil)
+(advice-add #'nlinum--region :override #'nlinum-hl-do-region)
+
+(defun nlinum-hl-do-markdown-fontify-region (_ beg end)
+  "Advice for `markdown-fontify-code-block-natively' to fix disappearing line
+numbers when rendering code blocks with `markdown-fontify-code-blocks-natively'
+on."
+  (nlinum-hl-do-region beg end))
+
 
 ;; DEPRECATED
 (define-minor-mode nlinum-hl-mode
