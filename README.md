@@ -3,13 +3,14 @@
 
 # nlinum-hl
 
-<img src="https://raw.githubusercontent.com/hlissner/emacs-nlinum-hl/screenshots/nlinum-hl.png" align="right" />
+<img src="/../screenshots/nlinum-hl.png" align="right" />
 
 > nlinum 1.7 is now available on ELPA and offers current-line highlighting, so
 > this plugin has changed its focus.
 
-`nlinum-hl` is an nlinum extension that tries to mitigate disappearing line
-numbers in buffers that have been open a while (a known issue with nlinum).
+`nlinum-hl` [tries to] remedy an issue in `nlinum` where line numbers disappear,
+due to a combination of bugs internal to nlinum and the fontification processes
+of certain major-modes and commands.
 
 > This was once a part of [doom-themes]
 
@@ -20,28 +21,63 @@ numbers in buffers that have been open a while (a known issue with nlinum).
 `M-x package-install RET nlinum-hl`
 
 ```emacs-lisp
-(require 'nlinum-hl)
+(require 'nlinum-hl) ; load this after nlinum
 ```
 
-By itself, `nlinum-hl` does nothing. You'll need to attach one of its functions
-or hooks somewhere. I leave it to you to decide where, as it depends on how bad
-the problem is for you. Here are some examples:
+90% of the time this should be all you need.
+
+However, certain major-modes, commands and functions will still eat up line
+numbers, typically as a result of using `with-silent-modifications` or
+preventing jit-lock from detecting changes in general.
+
+In that case, this package provides these functions:
+
++ `nlinum-hl-flush-region`: flush a specific region in the current window.
++ `nlinum-hl-flush-all-windows`: flush all open windows.
++ `nlinum-hl-flush-window`: flush the current window.
+
+Here are some examples of how to use them:
 
 ```emacs-lisp
+;; A shotgun approach that refreshes line numbers on a regular basis:
 ;; Runs occasionally, though unpredictably
 (add-hook 'post-gc-hook #'nlinum-hl-flush-all-windows)
 
 ;; whenever Emacs loses/gains focus
 (add-hook 'focus-in-hook  #'nlinum-hl-flush-all-windows)
 (add-hook 'focus-out-hook #'nlinum-hl-flush-all-windows)
+;; ...or switches windows
+(advice-add #'select-window :before #'nlinum-hl-do-select-window-flush)
+(advice-add #'select-window :after  #'nlinum-hl-do-select-window-flush)
 
 ;; after X amount of idle time
 (run-with-idle-timer 5 t #'nlinum-hl-flush-window)
 (run-with-idle-timer 30 t #'nlinum-hl-flush-all-windows)
 
-;; when switching windows
-(advice-add #'select-window :before #'nlinum-hl-do-flush)
-(advice-add #'select-window :after  #'nlinum-hl-do-flush)
+;; Bind it for flush-on-demand (this might be excessive)
+(global-set-key (kbd "<f9>") #'nlinum-hl-flush-all-windows)
+(global-set-key (kbd "<f8>") #'nlinum-hl-flush-window)
+(global-set-key (kbd "<f7>") #'nlinum-hl-flush-region) ; on selections
+```
+
+Also included are a variety of `nlinum-hl-do-*` advice functions, meant to be
+attached to certain functions with `advice-add`.
+
+Here are all the known issues and fixes (feel free to report/contribute more):
+
+```emacs-lisp
+;; With `markdown-fontify-code-blocks-natively' enabled in `markdown-mode',
+;; line numbers tend to vanish next to code blocks.
+(advice-add #'markdown-fontify-code-block-natively
+            :after #'nlinum-hl-do-markdown-fontify-region)
+
+;; When using `web-mode's code-folding an entire range of line numbers will
+;; vanish in the affected area.
+(advice-add #'web-mode-fold-or-unfold :after #'nlinum-hl-do-generic-flush)
+
+;; Changing fonts can leave nlinum line numbers in their original size; this
+;; forces them to resize.
+(advice-add #'set-frame-font :after #'nlinum-hl-flush-all-windows)
 ```
 
 
