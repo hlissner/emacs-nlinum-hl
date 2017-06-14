@@ -1,5 +1,6 @@
 [![MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![MELPA](http://melpa.org/packages/nlinum-hl-badge.svg)](http://melpa.org/#/nlinum-hl)
+![nlinum-hl](https://img.shields.io/badge/nlinum--hl-v1.0.5-blue.svg)
 
 # nlinum-hl
 
