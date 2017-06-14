@@ -172,22 +172,12 @@ are missing or not."
   (when (not norecord)
     (nlinum-hl-flush-window)))
 
-;;;###autoload
+;; DEPRECATED
 (define-minor-mode nlinum-hl-mode
   "Highlight current line in current buffer, using nlinum-mode."
   :lighter "" ; should be obvious it's on
   :init-value nil
-  (cond ((and nlinum-hl-mode nlinum-mode)
-         (add-hook 'post-command-hook #'nlinum-hl-line nil t))
-
-        (t
-         (remove-hook 'post-command-hook #'nlinum-hl-line t))))
-
-;; Changing fonts can upset nlinum overlays; this forces them to resize.
-(advice-add #'set-frame-font :after #'nlinum-hl-flush-all-windows)
-
-;; Folding in `web-mode' can cause nlinum glitching. This attempts to fix it.
-(advice-add #'web-mode-fold-or-unfold :after #'nlinum-hl-do-flush)
+  (message "nlinum-hl-mode is deprecated; use (setq nlinum-highlight-current-line t) instead"))
 
 (provide 'nlinum-hl)
 ;;; nlinum-hl.el ends here
