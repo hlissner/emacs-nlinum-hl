@@ -78,7 +78,7 @@ Here are all the known issues and fixes (feel free to report/contribute more):
 
 ;; Changing fonts can leave nlinum line numbers in their original size; this
 ;; forces them to resize.
-(advice-add #'set-frame-font :after #'nlinum-hl-flush-all-windows)
+(add-hook 'after-setting-font-hook #'nlinum-hl-flush-all-windows)
 ```
 
 
