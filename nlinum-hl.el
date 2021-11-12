@@ -1,9 +1,9 @@
 ;;; nlinum-hl.el --- heal nlinum's line numbers -*- lexical-binding: t; -*-
 ;;
-;; Copyright (C) 2017 Henrik Lissner
+;; Copyright (C) 2017-2021 Henrik Lissner
 ;;
 ;; Author: Henrik Lissner <http://github/hlissner>
-;; Maintainer: Henrik Lissner <henrik@lissner.net>
+;; Maintainer: Henrik Lissner <git@henrik.io>
 ;; Created: Jun 03, 2017
 ;; Modified: March 01, 2019
 ;; Version: 1.0.6
@@ -174,14 +174,6 @@ Credit for this fix goes to: https://github.com/gilbertw1"
 numbers when rendering code blocks with `markdown-fontify-code-blocks-natively'
 on."
   (nlinum-hl-do-region beg end))
-
-
-;; DEPRECATED
-(define-minor-mode nlinum-hl-mode
-  "Highlight current line in current buffer, using nlinum-mode."
-  :lighter "" ; should be obvious it's on
-  :init-value nil
-  (message "nlinum-hl-mode is deprecated; use (setq nlinum-highlight-current-line t) instead"))
 
 (provide 'nlinum-hl)
 ;;; nlinum-hl.el ends here
