@@ -1,6 +1,6 @@
 [![MIT](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![MELPA](http://melpa.org/packages/nlinum-hl-badge.svg)](http://melpa.org/#/nlinum-hl)
-![nlinum-hl](https://img.shields.io/badge/nlinum--hl-v1.0.5-blue.svg)
+![nlinum-hl](https://img.shields.io/badge/nlinum--hl-v1.0.7-blue.svg)
 
 > **This package is no longer maintained** now that Emacs 26+ has  native line
 > numbers (see `display-line-numbers-mode`), which is superior to nlinum in
